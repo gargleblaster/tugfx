@@ -29,16 +29,24 @@ class Candle {
     }
 
     tick(steps) {
-        var tick = (this.H - this.L) / (steps/2)
+        let path;
+
+        if( this.C > this.O ) {
+            path = (this.O-this.L)+(this.H-this.L)+(this.H-this.C)
+        } else {
+            path = (this.H-this.O)+(this.H-this.L)+(this.C-this.L)
+        }
+
+        var tick = path / steps
 
         let touchedHigh = this.h == this.H
         let touchedLow = this.l == this.L
 
         if( this.C > this.O ) {
-            if( touchedLow )
+            if( !touchedLow || (touchedLow && touchedHigh) )
                 tick = -tick
         } else {
-            if( touchedHigh )
+            if( touchedHigh && !touchedLow )
                 tick = -tick
         }
 
@@ -67,29 +75,33 @@ class Candle {
         if( this.p < 0 )
             return
 
+        console.log(`draw ${this.I} ${this.p} ${this.o} ${this.h} ${this.l} ${this.c} `)
+
         const WICKPCT = 0.25
         // const wickLeft = this.W - this.W*(1-WICKPCT)
-        const wickLeft = this.W/2 - this.W*(1-WICKPCT/2)
-        const wickWidth = wickLeft + this.W*WICKPCT
+        const wickLeft = this.I * (this.W + this.G) - this.W*(1-WICKPCT/2)
+        const wickRight = wickLeft + this.W*WICKPCT
+        const bodyLeft = this.I * (this.W + this.G) - this.W
+        const bodyRight = bodyLeft + this.W
 
 
-        push()
+        // push()
 
-        translate(width/4, height/2)
-        scale(1, -1)
-        translate(this.I * (this.W + this.G), 0)
+        // translate(width/4, height/2)
+        // scale(1, -1)
+        // translate(this.I * (this.W + this.G), 0)
 
         // var x = (this.W+this.G)*this.I
         rectMode(CORNERS)
 
         // wicks
         fill(200,0,0)
-        rect(wickLeft,this.l,wickLeft+wickWidth,this.h)
+        rect(wickLeft,this.l,wickRight,this.h)
         // body
         fill(0,200,0)
-        rect(0,this.o,this.W,this.c)
+        rect(bodyLeft,this.c,bodyRight,this.o)
 
-        pop()
+        // pop()
     }
 
 }
