@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "..\\..\\sw\\p5\\addons"
+		},
+		{
+			"path": "..\\..\\sw\\p5\\empty-example"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "tugfx"
+	}
+}
