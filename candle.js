@@ -77,10 +77,10 @@ class Candle {
 
         console.log(`draw ${this.I} ${this.p} ${this.o} ${this.h} ${this.l} ${this.c} `)
 
-        const WICKPCT = 0.25
+        const WICKPCT = .2
         // const wickLeft = this.W - this.W*(1-WICKPCT)
-        const wickLeft = this.I * (this.W + this.G) - this.W*(1-WICKPCT/2)
-        const wickRight = wickLeft + this.W*WICKPCT
+        const wickLeft = this.I * (this.W + this.G) - this.W + (this.W*(1-WICKPCT)/2)
+        const wickRight = wickLeft + this.W*(WICKPCT)
         const bodyLeft = this.I * (this.W + this.G) - this.W
         const bodyRight = bodyLeft + this.W
 

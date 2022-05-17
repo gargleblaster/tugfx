@@ -3,7 +3,7 @@
 let candles = [];
 let curcandle = 0;
 let step = 0;
-const STEPS = 200;
+const STEPS = 100;
 const WIDTH = 20;
 const GAP = 6;
 const SCALE = 1;
@@ -37,7 +37,7 @@ function draw() {
           candles[curcandle].tick(STEPS)
           // console.log(candles[curcandle])
         } else {
-          candles[curcandle].complete()
+          // candles[curcandle].complete()
           // candles[curcandle].draw()
           console.log(`complete ${i}`)
           let prevclose = candles[curcandle].C
