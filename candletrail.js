@@ -7,10 +7,10 @@ let prevclose = 0;
 const STEPS = 200;
 const WIDTH = 20;
 const GAP = 6;
-const SCALE = 1;
+const SCALE = 0.5;
 
 function setup() {
-    createCanvas(600, 600);
+    createCanvas(1000, 1000);
     candles[0] = new Candle(100,201,9,100,1,WIDTH,GAP,SCALE)
     candles[1] = new Candle(100.5,101.5,-99.5,100.5,2,WIDTH,GAP,SCALE)
     candles[2] = new Candle(100.5,101.5,0,100.5,3,WIDTH,GAP,SCALE)

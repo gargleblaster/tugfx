@@ -68,26 +68,26 @@ class Candle {
             return
 
         const WICKPCT = 0.25
-        const wickLeft = this.W - this.W*(1-WICKPCT)
+        // const wickLeft = this.W - this.W*(1-WICKPCT)
+        const wickLeft = this.W/2 - this.W*(1-WICKPCT/2)
         const wickWidth = wickLeft + this.W*WICKPCT
+
 
         push()
 
-        // translate(width/2, height/2)
-        // scale(this.scale, -1)
-        translate(this.scale * this.I * (this.W + this.G), 0)
+        translate(width/4, height/2)
+        scale(1, -1)
+        translate(this.I * (this.W + this.G), 0)
 
         // var x = (this.W+this.G)*this.I
+        rectMode(CORNERS)
 
         // wicks
         fill(200,0,0)
-        rect(wickLeft,this.l,wickWidth,this.h-this.l)
+        rect(wickLeft,this.l,wickLeft+wickWidth,this.h)
         // body
         fill(0,200,0)
-        if( this.c > this.o )
-            rect(0,this.c,this.W,this.c - this.o)
-        else
-            rect(0,this.o,this.W,this.o - this.c)
+        rect(0,this.o,this.W,this.c)
 
         pop()
     }
