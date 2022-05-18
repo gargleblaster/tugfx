@@ -12,9 +12,9 @@ function setup() {
     let i = 0
     candles[0] = new Candle(100, 111.5,  80,   110.5, i++,WIDTH,GAP,SCALE)
     candles[1] = new Candle(110, 121.5,  89.5, 120.5, i++,WIDTH,GAP,SCALE)
-    candles[2] = new Candle(120, 141.5, 110,   131.5, i++,WIDTH,GAP,SCALE)
-    candles[3] = new Candle(130, 181.5, 119.5, 140.5, i++,WIDTH,GAP,SCALE)
-    candles[4] = new Candle(140, 161.5, 130.5, 150.5, i++,WIDTH,GAP,SCALE)
+    candles[2] = new Candle(120, 141.5, 110,   141.5, i++,WIDTH,GAP,SCALE)
+    candles[3] = new Candle(130, 181.5, 119.5, 170.5, i++,WIDTH,GAP,SCALE)
+    candles[4] = new Candle(140, 161.5, 130.5, 160.5, i++,WIDTH,GAP,SCALE)
     candles[5] = new Candle(150, 161.5, 150,   160.5, i++,WIDTH,GAP,SCALE)
     candles[6] = new Candle(160, 171.5, 150.5, 170.5, i++,WIDTH,GAP,SCALE)
     candles[7] = new Candle(170, 171.5, 120.5, 120.5, i++,WIDTH,GAP,SCALE)
