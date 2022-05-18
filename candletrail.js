@@ -1,15 +1,13 @@
-//import { Candle } from './candle.js';
-
 let candles = [];
 let curcandle = 0;
 let step = 0;
-const STEPS = 100;
+const STEPS = 30;
 const WIDTH = 20;
 const GAP = 6;
 const SCALE = 1;
 
 function setup() {
-    createCanvas(1000, 1000);
+    createCanvas(400, 400);
     // candles[0] = new Candle(100,201,9,100,1,WIDTH,GAP,SCALE)
     candles[0] = new Candle(100, 101.5,  50,    80.5, 1,WIDTH,GAP,SCALE)
     candles[1] = new Candle(110, 111.5,   9.5, 100.5, 2,WIDTH,GAP,SCALE)
@@ -32,14 +30,14 @@ function draw() {
       candles[i].draw()
 
       if( i == curcandle ) {
-        text(candles[i].p, 40, 0)
+        // text(candles[i].p, 40, 0)
         if ( ++step < STEPS ) {
           candles[curcandle].tick()
           // console.log(candles[curcandle])
         } else {
           candles[curcandle].complete()
           candles[curcandle].draw()
-          console.log(`complete ${i}`)
+          // console.log(`complete ${i}`)
           // let prevclose = candles[curcandle].C
           step = 0;
           ++curcandle;
@@ -59,11 +57,13 @@ function draw() {
       candles[j].reset()
     candles[0].start(100, STEPS)
     noLoop()
-    setTimeout(() => {loop()}, 3000)
+    setTimeout(() => {loop()}, 500)
     }
 
   // stroke(255, 204, 0);
-  ellipse(0,0,50,50)
-  line(20,0,-20,0)
-  line(0,20,0,-20)
+
+  // reticle
+  // ellipse(0,0,50,50)
+  // line(20,0,-20,0)
+  // line(0,20,0,-20)
 }

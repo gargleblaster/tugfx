@@ -25,7 +25,7 @@ class Candle {
         this.h = open
         this.l = open
         this.c = open
-        console.log(`start ${this.I} ${this.p} ${this.o} ${this.h} ${this.l} ${this.c} `)
+        // console.log(`start ${this.I} ${this.p} ${this.o} ${this.h} ${this.l} ${this.c} `)
 
         let path;
 
@@ -61,7 +61,7 @@ class Candle {
         if( this.p < this.l ) {this.l = this.p}
 
         this.c = this.p
-        console.log(`tick ${this.stepSize} ${this.I} ${this.p} ${this.o} ${this.h} ${this.l} ${this.c} `)
+        // console.log(`tick ${this.stepSize} ${this.I} ${this.p} ${this.o} ${this.h} ${this.l} ${this.c} `)
 }
 
     complete() {
@@ -70,14 +70,14 @@ class Candle {
         this.h = this.H
         this.l = this.L
         this.c = this.C
-        console.log(`complete ${this.I} ${this.p} ${this.o} ${this.h} ${this.l} ${this.c} `)
+        // console.log(`complete ${this.I} ${this.p} ${this.o} ${this.h} ${this.l} ${this.c} `)
     }
 
     draw() {
         if( this.p < 0 )
             return
 
-        console.log(`draw ${this.I} ${this.p} ${this.o} ${this.h} ${this.l} ${this.c} `)
+        // console.log(`draw ${this.I} ${this.p} ${this.o} ${this.h} ${this.l} ${this.c} `)
 
         const WICKPCT = .2
         // const wickLeft = this.W - this.W*(1-WICKPCT)
@@ -95,6 +95,7 @@ class Candle {
 
         // var x = (this.W+this.G)*this.I
         rectMode(CORNERS)
+        noStroke()
 
         if( this.o < this.c ) {
             fill(0,200,0)
