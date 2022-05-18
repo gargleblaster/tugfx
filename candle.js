@@ -12,11 +12,16 @@ class Candle {
         this.G = g
         this.scale = scale
         this.p = -1
+
+        if( Math.max(this.O, this.H, this.L, this.C) != this.H || Math.min(this.O, this.H, this.L, this.C) != this.L ) {
+            console.log(`Invalid candle O: ${this.O} H ${this.H} L ${this.L} C ${this.C}`)
+        }
     }
 
     reset() {
         this.p = this.o = this.h = this.c = -1
         this.l = 999999
+        this.touchedHigh = this.touchedLow = false
     }
 
     start(open, steps) {
@@ -45,17 +50,23 @@ class Candle {
         let touchedLow = this.l == this.L
 
         if( this.C > this.O ) {
-            if( !touchedLow || (touchedLow && touchedHigh) )
+            if( !this.touchedLow || (this.touchedLow && this.touchedHigh) )
                 this.stepSize = -this.stepSize
         } else {
-            if( touchedHigh && !touchedLow )
+            if( this.touchedHigh && !this.touchedLow )
                 this.stepSize = -this.stepSize
         }
 
         this.p += this.stepSize
 
-        if (this.p > this.H) { this.p = this.H }
-        if (this.p < this.L) { this.p = this.L }
+        if (this.p >= this.H) { 
+            this.p = this.H 
+            this.touchedHigh = true
+        }
+        if (this.p <= this.L) { 
+            this.p = this.L 
+            this.touchedLow = true
+        }
 
         if( this.p > this.h ) {this.h = this.p}
         if( this.p < this.l ) {this.l = this.p}
@@ -63,6 +74,17 @@ class Candle {
         this.c = this.p
         // console.log(`tick ${this.stepSize} ${this.I} ${this.p} ${this.o} ${this.h} ${this.l} ${this.c} `)
 }
+
+    isComplete() {
+        // console.log(`isComplete touchedHigh ${this.touchedHigh} touchedLow ${this.touchedLow} stepSize ${this.stepSize} I ${this.I} p ${this.p} o ${this.o} h ${this.h} l ${this.l} c ${this.c} C ${this.C}`)
+
+        if( this.touchedHigh && this.touchedLow ) {
+            if( Math.abs(this.C - this.p) <= Math.abs(2*this.stepSize) )
+                return true
+        } 
+        
+        return false;
+    }
 
     complete() {
         // this.o = this.O

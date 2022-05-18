@@ -9,14 +9,15 @@ const SCALE = 1;
 function setup() {
     createCanvas(400, 400);
     // candles[0] = new Candle(100,201,9,100,1,WIDTH,GAP,SCALE)
-    candles[0] = new Candle(100, 101.5,  50,    80.5, 1,WIDTH,GAP,SCALE)
-    candles[1] = new Candle(110, 111.5,   9.5, 100.5, 2,WIDTH,GAP,SCALE)
-    candles[2] = new Candle(120, 121.5,  50,   101.5, 3,WIDTH,GAP,SCALE)
-    candles[3] = new Candle(130, 181.5,  99.5, 140.5, 4,WIDTH,GAP,SCALE)
-    candles[4] = new Candle(140, 141.5, 110.5, 120.5, 5,WIDTH,GAP,SCALE)
-    candles[5] = new Candle(150, 151.5,  50,    80.5, 6,WIDTH,GAP,SCALE)
-    candles[6] = new Candle(160, 161.5, 110.5, 120.5, 7,WIDTH,GAP,SCALE)
-    candles[7] = new Candle(170, 171.5, 110.5, 120.5, 8,WIDTH,GAP,SCALE)
+    let i = 0
+    candles[0] = new Candle(100, 111.5,  80,   110.5, i++,WIDTH,GAP,SCALE)
+    candles[1] = new Candle(110, 121.5,  89.5, 120.5, i++,WIDTH,GAP,SCALE)
+    candles[2] = new Candle(120, 141.5, 110,   131.5, i++,WIDTH,GAP,SCALE)
+    candles[3] = new Candle(130, 181.5, 119.5, 140.5, i++,WIDTH,GAP,SCALE)
+    candles[4] = new Candle(140, 161.5, 130.5, 150.5, i++,WIDTH,GAP,SCALE)
+    candles[5] = new Candle(150, 161.5, 150,   160.5, i++,WIDTH,GAP,SCALE)
+    candles[6] = new Candle(160, 171.5, 150.5, 170.5, i++,WIDTH,GAP,SCALE)
+    candles[7] = new Candle(170, 171.5, 120.5, 120.5, i++,WIDTH,GAP,SCALE)
     candles[0].start(100, STEPS)
   }
   
@@ -31,7 +32,7 @@ function draw() {
 
       if( i == curcandle ) {
         // text(candles[i].p, 40, 0)
-        if ( ++step < STEPS ) {
+        if ( !candles[curcandle].isComplete() /*++step < STEPS*/ ) {
           candles[curcandle].tick()
           // console.log(candles[curcandle])
         } else {
