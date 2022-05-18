@@ -13,14 +13,19 @@ class Priceline {
         this.price = price
     }
 
-    draw(x1, x2) {
+    draw(x1, x2, curprice) {
         if( this.price < 0 )
             return
 
         push()
 
         if( this.Linetype == 'STOP' ) {
-            stroke(200,0,0)
+            if( curprice <= this.price ) {
+                stroke(100,0,0)
+                strokeWeight(4)
+            } else {
+                stroke(200,0,0)
+            }
         }
 
         line(x1, this.price, x2, this.price)

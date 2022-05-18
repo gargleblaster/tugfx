@@ -3,7 +3,7 @@ let stop;
 let stopX;
 let curcandle = 0;
 let step = 0;
-const STEPS = 70;
+const STEPS = 30;
 const WIDTH = 20;
 const GAP = 6;
 const SCALE = 1;
@@ -32,7 +32,7 @@ function draw() {
   for( let i=0; i<=curcandle; ++i) {
     if( i < candles.length) {
       candles[i].draw()
-      stop.draw(stopX,width)
+      stop.draw(stopX,width,candles[curcandle].p)
 
       if( i == curcandle ) {
         // text(candles[i].p, 40, 0)
@@ -41,7 +41,7 @@ function draw() {
           // console.log(candles[curcandle])
         } else {
           candles[curcandle].complete()
-          candles[curcandle].draw()
+          // candles[curcandle].draw()
           stopX = candles[curcandle].getX()
           // console.log(`complete ${i}`)
           // let prevclose = candles[curcandle].C
