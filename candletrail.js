@@ -37,8 +37,8 @@ function draw() {
           candles[curcandle].tick(STEPS)
           // console.log(candles[curcandle])
         } else {
-          // candles[curcandle].complete()
-          // candles[curcandle].draw()
+          candles[curcandle].complete()
+          candles[curcandle].draw()
           console.log(`complete ${i}`)
           let prevclose = candles[curcandle].C
           step = 0;
