@@ -11,15 +11,15 @@ const SCALE = 1;
 function setup() {
     createCanvas(1000, 1000);
     // candles[0] = new Candle(100,201,9,100,1,WIDTH,GAP,SCALE)
-    candles[0] = new Candle(100,101.5,50,80.5,1,WIDTH,GAP,SCALE)
-    candles[1] = new Candle(110,111.5,9.5,100.5,2,WIDTH,GAP,SCALE)
-    candles[2] = new Candle(120,121.5,50,101.5,3,WIDTH,GAP,SCALE)
-    candles[3] = new Candle(130,131.5,99.5,100.5,4,WIDTH,GAP,SCALE)
-    candles[4] = new Candle(140,141.5,110.5,120.5,5,WIDTH,GAP,SCALE)
-    candles[5] = new Candle(150,151.5,50,80.5,6,WIDTH,GAP,SCALE)
-    candles[6] = new Candle(160,161.5,110.5,120.5,7,WIDTH,GAP,SCALE)
-    candles[7] = new Candle(170,171.5,110.5,120.5,8,WIDTH,GAP,SCALE)
-    candles[0].start(100)
+    candles[0] = new Candle(100, 101.5,  50,    80.5, 1,WIDTH,GAP,SCALE)
+    candles[1] = new Candle(110, 111.5,   9.5, 100.5, 2,WIDTH,GAP,SCALE)
+    candles[2] = new Candle(120, 121.5,  50,   101.5, 3,WIDTH,GAP,SCALE)
+    candles[3] = new Candle(130, 181.5,  99.5, 140.5, 4,WIDTH,GAP,SCALE)
+    candles[4] = new Candle(140, 141.5, 110.5, 120.5, 5,WIDTH,GAP,SCALE)
+    candles[5] = new Candle(150, 151.5,  50,    80.5, 6,WIDTH,GAP,SCALE)
+    candles[6] = new Candle(160, 161.5, 110.5, 120.5, 7,WIDTH,GAP,SCALE)
+    candles[7] = new Candle(170, 171.5, 110.5, 120.5, 8,WIDTH,GAP,SCALE)
+    candles[0].start(100, STEPS)
   }
   
 function draw() {
@@ -34,17 +34,18 @@ function draw() {
       if( i == curcandle ) {
         text(candles[i].p, 40, 0)
         if ( ++step < STEPS ) {
-          candles[curcandle].tick(STEPS)
+          candles[curcandle].tick()
           // console.log(candles[curcandle])
         } else {
           candles[curcandle].complete()
           candles[curcandle].draw()
           console.log(`complete ${i}`)
-          let prevclose = candles[curcandle].C
+          // let prevclose = candles[curcandle].C
           step = 0;
           ++curcandle;
           if( curcandle < candles.length) {
-            candles[curcandle].start(prevclose)
+            let prevclose = candles[curcandle].O
+            candles[curcandle].start(prevclose, STEPS)
           }
         }
       }
@@ -56,7 +57,7 @@ function draw() {
     step = 0;
     for( let j=0; j<candles.length; ++j)
       candles[j].reset()
-    candles[0].start(100)
+    candles[0].start(100, STEPS)
     noLoop()
     setTimeout(() => {loop()}, 3000)
     }
