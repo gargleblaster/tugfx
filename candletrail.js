@@ -1,7 +1,9 @@
 let candles = [];
+let stop;
+let stopX;
 let curcandle = 0;
 let step = 0;
-const STEPS = 30;
+const STEPS = 70;
 const WIDTH = 20;
 const GAP = 6;
 const SCALE = 1;
@@ -16,9 +18,10 @@ function setup() {
     candles[3] = new Candle(130, 181.5, 119.5, 170.5, i++,WIDTH,GAP,SCALE)
     candles[4] = new Candle(140, 161.5, 130.5, 160.5, i++,WIDTH,GAP,SCALE)
     candles[5] = new Candle(150, 161.5, 150,   160.5, i++,WIDTH,GAP,SCALE)
-    candles[6] = new Candle(160, 171.5, 150.5, 170.5, i++,WIDTH,GAP,SCALE)
+    candles[6] = new Candle(160, 171.5, 152.5, 170.5, i++,WIDTH,GAP,SCALE)
     candles[7] = new Candle(170, 171.5, 120.5, 120.5, i++,WIDTH,GAP,SCALE)
     candles[0].start(100, STEPS)
+    stop = new Priceline(-1, 'STOP')
   }
   
 function draw() {
@@ -29,6 +32,7 @@ function draw() {
   for( let i=0; i<=curcandle; ++i) {
     if( i < candles.length) {
       candles[i].draw()
+      stop.draw(stopX,width)
 
       if( i == curcandle ) {
         // text(candles[i].p, 40, 0)
@@ -38,8 +42,12 @@ function draw() {
         } else {
           candles[curcandle].complete()
           candles[curcandle].draw()
+          stopX = candles[curcandle].getX()
           // console.log(`complete ${i}`)
           // let prevclose = candles[curcandle].C
+
+          stop.move(candles[curcandle].L)
+
           step = 0;
           ++curcandle;
           if( curcandle < candles.length) {
@@ -57,6 +65,7 @@ function draw() {
     for( let j=0; j<candles.length; ++j)
       candles[j].reset()
     candles[0].start(100, STEPS)
+    stop.reset()
     noLoop()
     setTimeout(() => {loop()}, 500)
     }

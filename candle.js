@@ -1,5 +1,3 @@
-//import {rect} from './p5/p5.js';
-
 class Candle {
     // OHLC, index, width, gap
     constructor(o,h,l,c,i, w, g, scale) {
@@ -95,6 +93,12 @@ class Candle {
         // console.log(`complete ${this.I} ${this.p} ${this.o} ${this.h} ${this.l} ${this.c} `)
     }
 
+    getX() {
+        const bodyLeft = this.I * (this.W + this.G) - this.W
+        const bodyRight = bodyLeft + this.W
+        return (bodyLeft+bodyRight)/2
+    }
+
     draw() {
         if( this.p < 0 )
             return
@@ -109,7 +113,7 @@ class Candle {
         const bodyRight = bodyLeft + this.W
 
 
-        // push()
+        push()
 
         // translate(width/4, height/2)
         // scale(1, -1)
@@ -122,7 +126,7 @@ class Candle {
         if( this.o < this.c ) {
             fill(0,200,0)
         } else {
-            fill(200,0,0)
+            fill(240,0,0)
         }
 
         // wicks
@@ -130,7 +134,7 @@ class Candle {
         // body
         rect(bodyLeft,this.c,bodyRight,this.o)
 
-        // pop()
+        pop()
     }
 
 }
