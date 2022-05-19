@@ -1,3 +1,9 @@
+const LineTypeEnum = {
+    STOP: "Stop",
+    TARGET: "Target"
+}
+Object.freeze(LineTypeEnum)
+
 const StateEnum = {
     HIDDEN: "Hidden",
     PENDING: "Pending",
@@ -25,13 +31,13 @@ class Priceline {
 
     isHit(price) {
         // TODO add trade direction, assume long for now
-        if( this.Linetype == 'STOP' ) {
+        if( this.Linetype == LineTypeEnum.STOP ) {
             if( price <= this.price ) {
                 this.state = StateEnum.REACHED
                 return true
             }
         }
-        if( this.Linetype == 'TARGET' ) {
+        if( this.Linetype == LineTypeEnum.TARGET ) {
             if( price > this.price ) {
                 this.state = StateEnum.REACHED
                 return true
@@ -46,7 +52,7 @@ class Priceline {
 
         push()
 
-        if( this.Linetype == 'STOP' ) {
+        if( this.Linetype == LineTypeEnum.STOP ) {
             if( this.state == StateEnum.REACHED ) {
                 stroke(100,0,0)
                 strokeWeight(4)
