@@ -60,6 +60,14 @@ class Priceline {
                 stroke(200,0,0)
             }
         }
+        if( this.Linetype == LineTypeEnum.TARGET ) {
+            if( this.state == StateEnum.REACHED ) {
+                stroke(0,200,0)
+                strokeWeight(4)
+            } else {
+                stroke(0,100,0)
+            }
+        }
 
         line(x1, this.price, x2, this.price)
 

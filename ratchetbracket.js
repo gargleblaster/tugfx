@@ -17,7 +17,7 @@ function setup() {
     candles[2] = new Candle(120, 141.5, 110,   141.5, i++,WIDTH,GAP,SCALE)
     candles[3] = new Candle(130, 181.5, 119.5, 170.5, i++,WIDTH,GAP,SCALE)
     candles[4] = new Candle(140, 161.5, 130.5, 160.5, i++,WIDTH,GAP,SCALE)
-    candles[5] = new Candle(160, 161.5, 150,   150.5, i++,WIDTH,GAP,SCALE)
+    candles[5] = new Candle(150, 161.5, 150,   160.5, i++,WIDTH,GAP,SCALE)
     candles[6] = new Candle(160, 171.5, 152.5, 170.5, i++,WIDTH,GAP,SCALE)
     candles[7] = new Candle(170, 171.5, 120.5, 120.5, i++,WIDTH,GAP,SCALE)
     candles[0].start(100, STEPS)
@@ -68,7 +68,7 @@ function draw() {
     candles[0].start(100, STEPS)
     stop.reset()
     noLoop()
-    setTimeout(() => {loop()}, 1000)
+    setTimeout(() => {loop()}, 500)
     }
 
   // stroke(255, 204, 0);
