@@ -5,7 +5,7 @@ let stop;
 let stopX;
 let curcandle = 0;
 let step = 0;
-const STEPS = 40;
+const STEPS = 60;
 const WIDTH = 14;
 const GAP = 3;
 const SCALE = 2;    // TODO unused
@@ -17,7 +17,7 @@ function setup() {
     candles[0] = new Candle(100, 111.5,  80,   110.5, i++,WIDTH,GAP,SCALE)
     candles[1] = new Candle(110, 121.5,  89.5, 120.5, i++,WIDTH,GAP,SCALE)
     candles[2] = new Candle(120, 141.5, 110,   141.5, i++,WIDTH,GAP,SCALE)
-    candles[3] = new Candle(130, 181.5, 119.5, 170.5, i++,WIDTH,GAP,SCALE)
+    candles[3] = new Candle(130, 161.5, 119.5, 150.5, i++,WIDTH,GAP,SCALE)
     candles[4] = new Candle(140, 161.5, 130.5, 160.5, i++,WIDTH,GAP,SCALE)
     candles[5] = new Candle(160, 161.5, 150,   150.5, i++,WIDTH,GAP,SCALE)
     candles[6] = new Candle(160, 171.5, 152.5, 170.5, i++,WIDTH,GAP,SCALE)
@@ -38,20 +38,31 @@ function draw() {
 
   for( let i=0; i<=curcandle; ++i) {
     if( i < candles.length) {
-      let ratcheting = false
+      let targetHit = -1
+      let stopHit = -1
       candles[i].draw()
       targets.forEach( (tgt, i) => {
-        console.log(i)
-        ratcheting ||= tgt.isHit(candles[curcandle].p)
+        if( tgt.isHit(candles[curcandle].p) )
+          targetHit = i
         tgt.draw(stopX, width)
       })
-      stops.forEach( stp => {
-        ratcheting ||= stp.isHit(candles[curcandle].p)
+      stops.forEach( (stp, i) => {
+        if( stp.isHit(candles[curcandle].p) )
+          stopHit = i
         stp.draw(stopX, width)
       })
 
-      if( ratcheting ) {
-        console.log("ratcheting")
+      if( targetHit >= 0 ) {
+        console.log("ratcheting up")
+        stops[targetHit].state = StateEnum.HIDDEN
+        targets[targetHit].state = StateEnum.USED
+        if( targetHit+1 < targets.length ) {
+          stops[targetHit+1].state = StateEnum.ACTIVE
+          targets[targetHit+1].state = StateEnum.ACTIVE
+        }
+      }
+      if( stopHit >= 0 ) {
+        console.log("stopped out")
       }
 
       if( i == curcandle ) {

@@ -8,7 +8,8 @@ const StateEnum = {
     HIDDEN: "Hidden",
     PENDING: "Pending",
     ACTIVE: "Active",
-    REACHED: "Reached"
+    REACHED: "Reached",
+    USED: "Used"            // TODO how to distinguish from REACHED?
 }
 Object.freeze(StateEnum)
 
@@ -18,11 +19,12 @@ class Priceline {
         this.Linetype = linetype
         this.price = price
         this.state = state
+        this.StartState = state
     }
 
     reset() {
         this.price = this.Price
-        this.state = StateEnum.ACTIVE
+        this.state = this.StartState
     }
 
     move(price) {
@@ -30,6 +32,9 @@ class Priceline {
     }
 
     isHit(price) {
+        if( this.state !== StateEnum.ACTIVE )
+            return false
+
         // TODO add trade direction, assume long for now
         if( this.Linetype == LineTypeEnum.STOP ) {
             if( price <= this.price ) {
@@ -52,20 +57,46 @@ class Priceline {
 
         push()
 
-        if( this.Linetype == LineTypeEnum.STOP ) {
-            if( this.state == StateEnum.REACHED ) {
-                stroke(100,0,0)
-                strokeWeight(4)
-            } else {
-                stroke(200,0,0)
+        if (this.Linetype == LineTypeEnum.STOP) {
+            switch (this.state) {
+                case StateEnum.REACHED:
+                    stroke(100, 0, 0)
+                    strokeWeight(4)
+                    break
+                case StateEnum.USED:
+                    stroke(255, 200, 200)
+                    strokeWeight(2)
+                    break
+                case StateEnum.ACTIVE:
+                    stroke(200, 0, 0)
+                    break
+                case StateEnum.PENDING:
+                    stroke(50, 50, 50)
+                    break
+                case StateEnum.HIDDEN:
+                    pop()
+                    return
             }
         }
-        if( this.Linetype == LineTypeEnum.TARGET ) {
-            if( this.state == StateEnum.REACHED ) {
-                stroke(0,200,0)
-                strokeWeight(4)
-            } else {
-                stroke(0,100,0)
+        if (this.Linetype == LineTypeEnum.TARGET) {
+            switch (this.state) {
+                case StateEnum.REACHED:
+                    stroke(0, 200, 0)
+                    strokeWeight(4)
+                    break
+                case StateEnum.USED:
+                    stroke(200, 255, 200)
+                    strokeWeight(2)
+                    break
+                case StateEnum.ACTIVE:
+                    stroke(0, 100, 0)
+                    break
+                case StateEnum.PENDING:
+                    stroke(50, 50, 50)
+                    break
+                case StateEnum.HIDDEN:
+                    pop()
+                    return
             }
         }
 
