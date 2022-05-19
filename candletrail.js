@@ -3,7 +3,7 @@ let stop;
 let stopX;
 let curcandle = 0;
 let step = 0;
-const STEPS = 30;
+const STEPS = 40;
 const WIDTH = 14;
 const GAP = 3;
 const SCALE = 2;    // TODO unused

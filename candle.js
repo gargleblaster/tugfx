@@ -124,9 +124,9 @@ class Candle {
         noStroke()
 
         if( this.o < this.c ) {
-            fill(0,200,0)
+            fill(0,140,0)
         } else {
-            fill(240,0,0)
+            fill(170,0,0)
         }
 
         // wicks
