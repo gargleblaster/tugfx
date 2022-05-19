@@ -32,7 +32,8 @@ function draw() {
   for( let i=0; i<=curcandle; ++i) {
     if( i < candles.length) {
       candles[i].draw()
-      stop.draw(stopX,width,candles[curcandle].p)
+      stop.isHit(candles[curcandle].p)
+      stop.draw(stopX,width)
 
       if( i == curcandle ) {
         // text(candles[i].p, 40, 0)
