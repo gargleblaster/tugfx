@@ -4,9 +4,9 @@ let stopX;
 let curcandle = 0;
 let step = 0;
 const STEPS = 30;
-const WIDTH = 20;
-const GAP = 6;
-const SCALE = 1;
+const WIDTH = 14;
+const GAP = 3;
+const SCALE = 2;    // TODO unused
 
 function setup() {
     createCanvas(400, 400);
