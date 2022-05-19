@@ -1,9 +1,11 @@
 let candles = [];
+let stops = [];
+let targets = []
 let stop;
 let stopX;
 let curcandle = 0;
 let step = 0;
-const STEPS = 30;
+const STEPS = 40;
 const WIDTH = 14;
 const GAP = 3;
 const SCALE = 2;    // TODO unused
@@ -17,11 +19,16 @@ function setup() {
     candles[2] = new Candle(120, 141.5, 110,   141.5, i++,WIDTH,GAP,SCALE)
     candles[3] = new Candle(130, 181.5, 119.5, 170.5, i++,WIDTH,GAP,SCALE)
     candles[4] = new Candle(140, 161.5, 130.5, 160.5, i++,WIDTH,GAP,SCALE)
-    candles[5] = new Candle(150, 161.5, 150,   160.5, i++,WIDTH,GAP,SCALE)
+    candles[5] = new Candle(160, 161.5, 150,   150.5, i++,WIDTH,GAP,SCALE)
     candles[6] = new Candle(160, 171.5, 152.5, 170.5, i++,WIDTH,GAP,SCALE)
     candles[7] = new Candle(170, 171.5, 120.5, 120.5, i++,WIDTH,GAP,SCALE)
     candles[0].start(100, STEPS)
-    stop = new Priceline(-1, LineTypeEnum.STOP)
+    targets[0] = new Priceline(125, LineTypeEnum.TARGET, StateEnum.ACTIVE)
+    targets[1] = new Priceline(150, LineTypeEnum.TARGET, StateEnum.PENDING)
+    targets[2] = new Priceline(175, LineTypeEnum.TARGET, StateEnum.PENDING)
+    stops[0] = new Priceline(75, LineTypeEnum.STOP, StateEnum.ACTIVE)
+    stops[1] = new Priceline(100, LineTypeEnum.STOP, StateEnum.HIDDEN)
+    stops[2] = new Priceline(125, LineTypeEnum.STOP, StateEnum.HIDDEN)
   }
   
 function draw() {
@@ -31,9 +38,21 @@ function draw() {
 
   for( let i=0; i<=curcandle; ++i) {
     if( i < candles.length) {
+      let ratcheting = false
       candles[i].draw()
-      stop.isHit(candles[curcandle].p)
-      stop.draw(stopX,width)
+      targets.forEach( (tgt, i) => {
+        console.log(i)
+        ratcheting ||= tgt.isHit(candles[curcandle].p)
+        tgt.draw(stopX, width)
+      })
+      stops.forEach( stp => {
+        ratcheting ||= stp.isHit(candles[curcandle].p)
+        stp.draw(stopX, width)
+      })
+
+      if( ratcheting ) {
+        console.log("ratcheting")
+      }
 
       if( i == curcandle ) {
         // text(candles[i].p, 40, 0)
@@ -47,7 +66,7 @@ function draw() {
           // console.log(`complete ${i}`)
           // let prevclose = candles[curcandle].C
 
-          stop.move(candles[curcandle].L)
+          //stop.move(candles[curcandle].L)
 
           step = 0;
           ++curcandle;
@@ -66,9 +85,10 @@ function draw() {
     for( let j=0; j<candles.length; ++j)
       candles[j].reset()
     candles[0].start(100, STEPS)
-    stop.reset()
+    targets.forEach(t => t.reset())
+    stops.forEach(t => t.reset())
     noLoop()
-    setTimeout(() => {loop()}, 500)
+    setTimeout(() => {loop()}, 1000)
     }
 
   // stroke(255, 204, 0);
