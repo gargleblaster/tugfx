@@ -5,7 +5,7 @@ let stop;
 let stopX;
 let curcandle = 0;
 let step = 0;
-const STEPS = 60;
+const STEPS = 80;
 const WIDTH = 14;
 const GAP = 3;
 const SCALE = 2;    // TODO unused
@@ -56,6 +56,7 @@ function draw() {
         console.log("ratcheting up")
         stops[targetHit].state = StateEnum.HIDDEN
         targets[targetHit].state = StateEnum.USED
+        targets[targetHit].UsedX = stopX + WIDTH
         if( targetHit+1 < targets.length ) {
           stops[targetHit+1].state = StateEnum.ACTIVE
           targets[targetHit+1].state = StateEnum.ACTIVE
@@ -67,7 +68,7 @@ function draw() {
 
       if( i == curcandle ) {
         // text(candles[i].p, 40, 0)
-        if ( !candles[curcandle].isComplete() /*++step < STEPS*/ ) {
+        if ( !candles[curcandle].isComplete() ) {
           candles[curcandle].tick()
           // console.log(candles[curcandle])
         } else {

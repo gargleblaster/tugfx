@@ -85,8 +85,8 @@ class Priceline {
                     strokeWeight(4)
                     break
                 case StateEnum.USED:
-                    stroke(200, 255, 200)
-                    strokeWeight(2)
+                    stroke(0, 100, 0)
+                    strokeWeight(4)
                     break
                 case StateEnum.ACTIVE:
                     stroke(0, 100, 0)
@@ -100,7 +100,11 @@ class Priceline {
             }
         }
 
-        line(x1, this.price, x2, this.price)
+        if( this.state === StateEnum.USED ) {
+            line(0, this.price, this.UsedX, this.price)
+        } else {
+            line(x1, this.price, x2, this.price)
+        }
 
         pop()
     }
