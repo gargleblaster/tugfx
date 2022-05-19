@@ -9,7 +9,7 @@ const GAP = 3;
 const SCALE = 2;    // TODO unused
 
 function setup() {
-    createCanvas(400, 400);
+    createCanvas(200, 200);
     // candles[0] = new Candle(100,201,9,100,1,WIDTH,GAP,SCALE)
     let i = 0
     candles[0] = new Candle(100, 111.5,  80,   110.5, i++,WIDTH,GAP,SCALE)
@@ -26,7 +26,7 @@ function setup() {
   
 function draw() {
   background(255)
-  translate(width/4, height/2)
+  translate(width/6, 5*height/4)
   scale(1, -1)
 
   for( let i=0; i<=curcandle; ++i) {
