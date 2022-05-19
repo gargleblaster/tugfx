@@ -21,7 +21,7 @@ function setup() {
     candles[6] = new Candle(160, 171.5, 152.5, 170.5, i++,WIDTH,GAP,SCALE)
     candles[7] = new Candle(170, 171.5, 120.5, 120.5, i++,WIDTH,GAP,SCALE)
     candles[0].start(100, STEPS)
-    stop = new Priceline(-1, LineTypeEnum.STOP)
+    stop = new Priceline(-1, LineTypeEnum.STOP, StateEnum.ACTIVE)
   }
   
 function draw() {
