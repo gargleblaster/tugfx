@@ -20,6 +20,7 @@ class Priceline {
         this.price = price
         this.state = state
         this.StartState = state
+        this.MinX = 99999
     }
 
     reset() {
@@ -54,6 +55,9 @@ class Priceline {
     draw(x1, x2) {
         if( this.price < 0 )
             return
+
+        this.MinX = Math.min(this.MinX, x1)
+        console.log(`MinX ${this.MinX}`)
 
         push()
 
@@ -92,7 +96,7 @@ class Priceline {
                     stroke(0, 100, 0)
                     break
                 case StateEnum.PENDING:
-                    stroke(50, 50, 50)
+                    stroke(150, 250, 150)
                     break
                 case StateEnum.HIDDEN:
                     pop()
@@ -101,7 +105,7 @@ class Priceline {
         }
 
         if( this.state === StateEnum.USED ) {
-            line(0, this.price, this.UsedX, this.price)
+            line(this.MinX, this.price, this.UsedX, this.price)
         } else {
             line(x1, this.price, x2, this.price)
         }

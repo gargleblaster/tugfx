@@ -2,7 +2,7 @@ let candles = [];
 let stops = [];
 let targets = []
 let stop;
-let stopX;
+let stopX = 0;
 let curcandle = 0;
 let step = 0;
 const STEPS = 80;
@@ -40,7 +40,6 @@ function draw() {
     if( i < candles.length) {
       let targetHit = -1
       let stopHit = -1
-      candles[i].draw()
       targets.forEach( (tgt, i) => {
         if( tgt.isHit(candles[curcandle].p) )
           targetHit = i
@@ -51,6 +50,7 @@ function draw() {
           stopHit = i
         stp.draw(stopX, width)
       })
+      candles[i].draw()
 
       if( targetHit >= 0 ) {
         console.log("ratcheting up")
@@ -64,6 +64,7 @@ function draw() {
       }
       if( stopHit >= 0 ) {
         console.log("stopped out")
+        targets[stopHit].state = StateEnum.HIDDEN
       }
 
       if( i == curcandle ) {
@@ -75,6 +76,7 @@ function draw() {
           candles[curcandle].complete()
           // candles[curcandle].draw()
           stopX = candles[curcandle].getX()
+          if( stopX < 0 ) console.log(`StopX ${stopX}`)
           // console.log(`complete ${i}`)
           // let prevclose = candles[curcandle].C
 
@@ -94,11 +96,12 @@ function draw() {
   if( curcandle >= candles.length ) {
     curcandle = 0;
     step = 0;
+    stopX = candles[0].getX()
+    targets.forEach(t => t.reset())
+    stops.forEach(t => t.reset())
     for( let j=0; j<candles.length; ++j)
       candles[j].reset()
     candles[0].start(100, STEPS)
-    targets.forEach(t => t.reset())
-    stops.forEach(t => t.reset())
     noLoop()
     setTimeout(() => {loop()}, 1000)
     }
