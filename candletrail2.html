@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Candle Trail Animation - Expanded</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #ffffff; font-family: sans-serif;}
+        canvas { border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 4px; }
+    </style>
+</head>
+<body>
+<script>
+    let candles = new Array();
+    let currentCandle;
+
+    // Trade Plan Settings
+    let entryPrice = 100;
+    let breakBy = 0;
+
+    // Running State
+    let trailStop = -1;
+    let tradeActive = true;
+    let exitWaitFrames = 0;
+    let frameCounter = 0;
+    let candleSpacing = 35;
+
+    // Expanded Scripted Price Path
+    let waypoints = new Array(106, 104, 114, 110, 122, 118, 132, 128, 142, 120);
+    let currentWaypointIdx = 0;
+    let basePrice = 100;
+
+    function setup() {
+        createCanvas(800, 500);
+        resetAnimation();
+    }
+
+    function resetAnimation() {
+        candles = new Array();
+        basePrice = entryPrice;
+        currentWaypointIdx = 0;
+
+        // NEW: Create an initial "Setup Candle" so the first trailing stop has a visual anchor
+        let setupCandle = { o: entryPrice - 6, h: entryPrice + 2, l: entryPrice - 8, c: entryPrice };
+        candles.push(setupCandle);
+
+        // Calculate the initial stop from the low of the setup candle
+        trailStop = setupCandle.l - breakBy;
+
+        // Initialize the active trade candle
+        currentCandle = {o: entryPrice, h: entryPrice, l: entryPrice, c: entryPrice};
+        candles.push(currentCandle);
+
+        tradeActive = true;
+        exitWaitFrames = 0;
+        frameCounter = 0;
+    }
+
+    function getY(price) {
+        return map(price, 85, 145, height - 30, 30);
+    }
+
+    function draw() {
+        background(252, 253, 255);
+
+        if (tradeActive) {
+            frameCounter++;
+
+            // Progress along the expanded waypoints
+            if (currentWaypointIdx < waypoints.length) {
+                let targetPrice = waypoints[currentWaypointIdx];
+                if (basePrice < targetPrice) {
+                    basePrice += 0.15; // Slow, deliberate pacing
+                    if (basePrice >= targetPrice) currentWaypointIdx++;
+                } else {
+                    basePrice -= 0.15;
+                    if (basePrice <= targetPrice) currentWaypointIdx++;
+                }
+            }
+
+            let currentPrice = basePrice + random(-1.0, 1.0);
+
+            currentCandle.c = currentPrice;
+            if (currentPrice > currentCandle.h) currentCandle.h = currentPrice;
+            if (currentPrice < currentCandle.l) currentCandle.l = currentPrice;
+
+            // Evaluate Exit
+            if (currentPrice <= trailStop) {
+                tradeActive = false;
+                currentCandle.c = trailStop;
+            }
+
+            // Roll over to a new candle every 50 frames (~0.8 seconds per candle)
+            if (frameCounter % 50 === 0 && tradeActive) {
+                let possibleStop = currentCandle.l - breakBy;
+                if (possibleStop > trailStop) {
+                    trailStop = possibleStop; // Ratchet up only
+                }
+                currentCandle = {o: currentPrice, h: currentPrice, l: currentPrice, c: currentPrice};
+                candles.push(currentCandle);
+            }
+        } else {
+            exitWaitFrames++;
+            if (exitWaitFrames > 120) resetAnimation();
+        }
+
+        // --- RENDER VISUALS ---
+        let entryY = getY(entryPrice);
+        stroke(150); strokeWeight(2); drawingContext.setLineDash(new Array(5, 5));
+        line(0, entryY, width, entryY);
+        drawingContext.setLineDash(new Array());
+        noStroke(); fill(120); textSize(13);
+        text("Entry Price", 10, entryY + 16);
+
+        if (trailStop > 0) {
+            let stopY = getY(trailStop);
+            stroke(239, 83, 80); strokeWeight(2); drawingContext.setLineDash(new Array(4, 4));
+            line(0, stopY, width, stopY);
+            drawingContext.setLineDash(new Array());
+            noStroke(); fill(239, 83, 80); textStyle(BOLD);
+            text("Candle Trail Stop", 10, stopY + 16);
+            textStyle(NORMAL);
+        }
+
+        // Draw Candlesticks
+        for (let i = 0; i < candles.length; i++) {
+            let c = candles[i];
+            let cx = 60 + i * candleSpacing;
+            let isUp = c.c >= c.o;
+            let candleColor = isUp ? color(38, 166, 154) : color(239, 83, 80);
+
+            stroke(candleColor); strokeWeight(1.5);
+            line(cx, getY(c.h), cx, getY(c.l));
+
+            let yO = getY(c.o);
+            let yC = getY(c.c);
+            let bodyHeight = Math.abs(yO - yC);
+            if (bodyHeight < 1) bodyHeight = 1;
+
+            noStroke(); fill(candleColor);
+            rect(cx - 4, min(yO, yC), 8, bodyHeight);
+        }
+
+        if (!tradeActive) {
+            let ex = 60 + (candles.length - 1) * candleSpacing;
+            let ey = getY(trailStop);
+            fill(239, 83, 80, 40); circle(ex, ey, 50);
+            fill(239, 83, 80); circle(ex, ey, 12);
+            fill(0); textSize(16); textStyle(BOLD);
+            text("FLATTEN!", ex - 35, ey - 32);
+            textStyle(NORMAL);
+        }
+    }
+</script>
+</body>
+</html>

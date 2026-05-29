@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ratchet Bracket Animation - Discrete Trail</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #ffffff; font-family: sans-serif;}
+        canvas { border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 4px; }
+    </style>
+</head>
+<body>
+<script>
+    let candles = new Array();
+    let currentCandle;
+    let hitMarkers = new Array();
+    let ghostBrackets = new Array();
+
+    // Trade Plan Settings
+    let entryPrice = 100;
+
+    // Bracket 1 & 2 Settings (Increment is $15)
+    let target1 = 115; let stop1 = 90;
+    let target2 = 130; let stop2 = 105;
+
+    // Running State
+    let bracketState = 1;
+    let activeTarget = target1;
+    let activeStop = stop1;
+
+    let tradeActive = true;
+    let exitWaitFrames = 0;
+    let frameCounter = 0;
+    let candleSpacing = 30;
+
+    // Scripted Price Path: Hit TGT1 -> Hit TGT2 -> Hit GHOST TGT -> Roll over to Stop
+    let waypoints = new Array(106, 102, 118, 110, 135, 128, 150, 140, 125);
+    let currentWaypointIdx = 0;
+    let basePrice = 100;
+
+    function setup() {
+        createCanvas(800, 500);
+        resetAnimation();
+    }
+
+    function resetAnimation() {
+        candles = new Array();
+        hitMarkers = new Array();
+        ghostBrackets = new Array();
+        basePrice = entryPrice;
+        currentWaypointIdx = 0;
+
+        bracketState = 1;
+        activeTarget = target1;
+        activeStop = stop1;
+
+        currentCandle = {o: entryPrice, h: entryPrice, l: entryPrice, c: entryPrice};
+        candles.push(currentCandle);
+
+        tradeActive = true;
+        exitWaitFrames = 0;
+        frameCounter = 0;
+    }
+
+    function getY(price) {
+        // Adjusted canvas scaling to fit the new 150 peak
+        return map(price, 85, 165, height - 30, 30);
+    }
+
+    function draw() {
+        background(252, 253, 255);
+
+        if (tradeActive) {
+            frameCounter++;
+
+            // Progress along waypoints
+            if (currentWaypointIdx < waypoints.length) {
+                let tp = waypoints[currentWaypointIdx];
+                if (basePrice < tp) {
+                    basePrice += 0.20;
+                    if (basePrice >= tp) currentWaypointIdx++;
+                } else {
+                    basePrice -= 0.20;
+                    if (basePrice <= tp) currentWaypointIdx++;
+                }
+            }
+
+            let currentPrice = basePrice + random(-1.0, 1.0);
+
+            currentCandle.c = currentPrice;
+            if (currentPrice > currentCandle.h) currentCandle.h = currentPrice;
+            if (currentPrice < currentCandle.l) currentCandle.l = currentPrice;
+
+            // RATCHET BRACKET STATE MACHINE
+            if (bracketState === 1) {
+                if (currentPrice >= activeTarget) {
+                    hitMarkers.push({x: candles.length - 1, y: activeTarget, label: "TGT 1 HIT"});
+
+                    ghostBrackets.push({y: activeTarget, isTarget: true, label: "Target 1 (Hit)"});
+                    ghostBrackets.push({y: activeStop, isTarget: false, label: "Bracket 1 Stop"});
+
+                    bracketState = 2;
+                    activeTarget = target2; // 130
+                    activeStop = stop2;     // 105
+                } else if (currentPrice <= activeStop) { tradeActive = false; }
+            }
+            else if (bracketState === 2) {
+                if (currentPrice >= activeTarget) {
+                    hitMarkers.push({x: candles.length - 1, y: activeTarget, label: "TGT 2 HIT"});
+
+                    ghostBrackets.push({y: activeTarget, isTarget: true, label: "Target 2 (Hit)"});
+                    ghostBrackets.push({y: activeStop, isTarget: false, label: "Bracket 2 Stop"});
+
+                    bracketState = 3;
+                    // Establish the first discrete invisible target for the Trail Phase
+                    activeTarget = 145;
+                    activeStop = 120;
+                } else if (currentPrice <= activeStop) { tradeActive = false; }
+            }
+            else if (bracketState === 3) {
+                // Discrete trailing logic: Stop only jumps when the ghost target is hit
+                if (currentPrice >= activeTarget) {
+                    hitMarkers.push({x: candles.length - 1, y: activeTarget, label: "GHOST HIT"});
+
+                    ghostBrackets.push({y: activeTarget, isTarget: true, label: "Ghost Target (Hit)"});
+                    ghostBrackets.push({y: activeStop, isTarget: false, label: "Trail Stop (Old)"});
+
+                    // Ratchet up by the next discrete increment
+                    activeTarget += 15;
+                    activeStop += 15;
+                } else if (currentPrice <= activeStop) { tradeActive = false; }
+            }
+
+            // Roll over to a new candle every 45 frames
+            if (frameCounter % 45 === 0 && tradeActive) {
+                currentCandle = {o: currentPrice, h: currentPrice, l: currentPrice, c: currentPrice};
+                candles.push(currentCandle);
+            }
+        } else {
+            exitWaitFrames++;
+            if (exitWaitFrames > 120) resetAnimation();
+        }
+
+        // --- RENDER VISUALS ---
+
+        // 1. Draw Ghost Brackets in the background first
+        for (let i = 0; i < ghostBrackets.length; i++) {
+            let gb = ghostBrackets[i];
+            let gy = getY(gb.y);
+
+            if (gb.isTarget) {
+                stroke(38, 166, 154, 45); // Faint green
+                strokeWeight(2); drawingContext.setLineDash(new Array(5, 5));
+                line(0, gy, width, gy);
+                drawingContext.setLineDash(new Array());
+                noStroke(); fill(38, 166, 154, 100); textStyle(NORMAL);
+                text(gb.label, 10, gy - 8);
+            } else {
+                stroke(239, 83, 80, 45); // Faint red
+                strokeWeight(2); drawingContext.setLineDash(new Array(5, 5));
+                line(0, gy, width, gy);
+                drawingContext.setLineDash(new Array());
+                noStroke(); fill(239, 83, 80, 100); textStyle(NORMAL);
+                text(gb.label, 10, gy + 16);
+            }
+        }
+
+        // 2. Draw Active Target Lines (Differentiate Ghost Target from Hard Target)
+        if (bracketState === 3 && activeTarget > 0) {
+            let tgtY = getY(activeTarget);
+            stroke(38, 166, 154, 150); // Lighter green for Ghost Target
+            strokeWeight(2); drawingContext.setLineDash(new Array(5, 5));
+            line(0, tgtY, width, tgtY);
+            drawingContext.setLineDash(new Array());
+            noStroke(); fill(38, 166, 154, 150); textStyle(BOLD);
+            text("Ghost Target (Trail Increment)", 10, tgtY - 8);
+            textStyle(NORMAL);
+        } else if (activeTarget > 0) {
+            let tgtY = getY(activeTarget);
+            stroke(38, 166, 154); strokeWeight(2); drawingContext.setLineDash(new Array(5, 5));
+            line(0, tgtY, width, tgtY);
+            drawingContext.setLineDash(new Array());
+            noStroke(); fill(38, 166, 154); textStyle(BOLD);
+            text("Active Target", 10, tgtY - 8);
+            textStyle(NORMAL);
+        }
+
+        // 3. Draw Active Stop Line
+        let stopY = getY(activeStop);
+        stroke(239, 83, 80); strokeWeight(2); drawingContext.setLineDash(new Array(5, 5));
+        line(0, stopY, width, stopY);
+        drawingContext.setLineDash(new Array());
+        noStroke(); fill(239, 83, 80); textStyle(BOLD);
+        let stopLabel = bracketState === 3 ? "Trailing Stop" : "Bracket Stop";
+        text(stopLabel, 10, stopY + 16);
+        textStyle(NORMAL);
+
+        // 4. Draw Candlesticks on top of lines
+        for (let i = 0; i < candles.length; i++) {
+            let c = candles[i];
+            let cx = 60 + i * candleSpacing;
+            let isUp = c.c >= c.o;
+            let candleColor = isUp ? color(38, 166, 154) : color(239, 83, 80);
+
+            stroke(candleColor); strokeWeight(1.5);
+            line(cx, getY(c.h), cx, getY(c.l));
+
+            let yO = getY(c.o);
+            let yC = getY(c.c);
+            let bodyHeight = Math.abs(yO - yC);
+            if (bodyHeight < 1) bodyHeight = 1;
+
+            noStroke(); fill(candleColor);
+            rect(cx - 4, min(yO, yC), 8, bodyHeight);
+        }
+
+        // 5. Draw Hit Markers
+        for (let i = 0; i < hitMarkers.length; i++) {
+            let hm = hitMarkers[i];
+            let hx = 60 + hm.x * candleSpacing;
+            let hy = getY(hm.y);
+            fill(38, 166, 154, 40); circle(hx, hy, 30);
+            fill(38, 166, 154); circle(hx, hy, 8);
+            fill(0); textSize(12); textStyle(BOLD);
+            text(hm.label, hx - 20, hy - 20);
+            textStyle(NORMAL);
+        }
+
+        // 6. Final Flatten Marker
+        if (!tradeActive) {
+            let ex = 60 + (candles.length - 1) * candleSpacing;
+            let ey = getY(activeStop);
+            fill(239, 83, 80, 40); circle(ex, ey, 50);
+            fill(239, 83, 80); circle(ex, ey, 12);
+            fill(0); textSize(16); textStyle(BOLD);
+            text("FLATTEN!", ex - 35, ey - 32);
+            textStyle(NORMAL);
+        }
+    }
+</script>
+</body>
+</html>
