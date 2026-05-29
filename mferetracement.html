@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>MFE Retracement Candlestick Animation</title>
+    <title>MFE Retracement Animation - Expanded</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <style>
         body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #ffffff; font-family: sans-serif;}
@@ -24,12 +24,11 @@
     let tradeActive = true;
     let exitWaitFrames = 0;
     let frameCounter = 0;
-    let candleSpacing = 12;
+    let candleSpacing = 35; // Widened for 12-15 candles
 
-    // Scripted Price Path
-    // 1. Rally to 124 | 2. Safe Dip to 115 | 3. New High to 146 | 4. Flatten Dip
-    // Using new Array() to prevent the formatting filter from breaking the code
-    let waypoints = new Array(124, 115, 146, 120);
+    // Expanded Scripted Price Path: ~13 candles over ~11 seconds
+    // Story: Early dip (dormant) -> Rally to activate (122) -> Safe dip -> New High (136) -> Safe dip -> Final High (146) -> Flatten
+    let waypoints = new Array(106, 98, 112, 108, 122, 114, 136, 126, 146, 120);
     let currentWaypointIdx = 0;
     let basePrice = 100;
 
@@ -44,7 +43,11 @@
         basePrice = entryPrice;
         currentWaypointIdx = 0;
 
-        // Initialize the first candle
+        // Setup Candle to anchor the visual start
+        let setupCandle = { o: entryPrice - 4, h: entryPrice + 2, l: entryPrice - 6, c: entryPrice };
+        candles.push(setupCandle);
+
+        // Initialize the first active trade candle
         currentCandle = {o: entryPrice, h: entryPrice, l: entryPrice, c: entryPrice};
         candles.push(currentCandle);
 
@@ -53,9 +56,9 @@
         frameCounter = 0;
     }
 
-    // Maps a dollar price to a Y-coordinate on the canvas
     function getY(price) {
-        return map(price, 80, 160, height - 30, 30);
+        // Scaled to fit the new 146 high and the 98 dip
+        return map(price, 90, 155, height - 30, 30);
     }
 
     function draw() {
@@ -64,20 +67,20 @@
         if (tradeActive) {
             frameCounter++;
 
-            // Progress along the scripted waypoints
+            // Progress along expanded waypoints
             if (currentWaypointIdx < waypoints.length) {
                 let targetPrice = waypoints[currentWaypointIdx];
                 if (basePrice < targetPrice) {
-                    basePrice += 0.45;
+                    basePrice += 0.20; // Deliberate pacing
                     if (basePrice >= targetPrice) currentWaypointIdx++;
                 } else {
-                    basePrice -= 0.45;
+                    basePrice -= 0.20;
                     if (basePrice <= targetPrice) currentWaypointIdx++;
                 }
             }
 
             // Add realistic market noise
-            let currentPrice = basePrice + random(-2.5, 2.5);
+            let currentPrice = basePrice + random(-1.0, 1.0);
 
             // Update the current candle boundaries
             currentCandle.c = currentPrice;
@@ -105,8 +108,8 @@
                 }
             }
 
-            // Roll over to a new candle every 14 frames
-            if (frameCounter % 14 === 0 && tradeActive) {
+            // Roll over to a new candle every 50 frames (~0.8 seconds)
+            if (frameCounter % 50 === 0 && tradeActive) {
                 currentCandle = {o: currentPrice, h: currentPrice, l: currentPrice, c: currentPrice};
                 candles.push(currentCandle);
             }
@@ -165,7 +168,7 @@
             let cx = 60 + i * candleSpacing;
 
             let isUp = c.c >= c.o;
-            let candleColor = isUp ? color(38, 166, 154) : color(239, 83, 80); // Standard Green/Red
+            let candleColor = isUp ? color(38, 166, 154) : color(239, 83, 80);
 
             // Draw Wicks
             stroke(candleColor);
@@ -191,12 +194,12 @@
             let ey = getY(exitCandle.c);
 
             fill(239, 83, 80, 40); noStroke();
-            circle(ex, ey, 40);
+            circle(ex, ey, 50);
             fill(239, 83, 80);
-            circle(ex, ey, 10);
+            circle(ex, ey, 12);
 
             fill(0); textSize(16); textStyle(BOLD);
-            text("FLATTEN!", ex - 35, ey - 25);
+            text("FLATTEN!", ex - 35, ey - 32);
             textStyle(NORMAL);
         }
     }

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>R1:R3 vs Ratchet Bracket - The Runner Scenario</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <style>
+    body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #ffffff; font-family: sans-serif;}
+    canvas { border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 4px; }
+  </style>
+</head>
+<body>
+<script>
+  let candles = new Array();
+  let currentCandle;
+
+  // R1:R3 OCO State
+  let r1r3Active = true;
+  let r1Target = 130;
+  let r1Stop = 90;
+  let r1ExitIndex = -1;
+  let r1ExitPrice = -1;
+
+  // Ratchet Bracket State
+  let rbActive = true;
+  let rbState = 1;
+  let rbTarget = 110;
+  let rbStop = 90;
+  let rbTrailIncrement = 10;
+  let rbHitMarkers = new Array();
+  let rbGhostBrackets = new Array();
+  let rbExitIndex = -1;
+  let rbExitPrice = -1;
+
+  // Shared Environment
+  let entryPrice = 100;
+  let frameCounter = 0;
+  let exitWaitFrames = 0;
+  let candleSpacing = 16;
+
+  // Scripted Path: Huge runner up to 166 (R6+ territory), then crash
+  let waypoints = new Array(106, 96, 115, 105, 125, 116, 135, 124, 145, 134, 155, 144, 166, 140);
+  let currentWaypointIdx = 0;
+  let basePrice = 100;
+
+  function setup() {
+    createCanvas(1000, 550);
+    resetAnimation();
+  }
+
+  function resetAnimation() {
+    candles = new Array();
+    basePrice = entryPrice;
+    currentWaypointIdx = 0;
+    frameCounter = 0;
+    exitWaitFrames = 0;
+
+    // Reset R1:R3
+    r1r3Active = true;
+    r1ExitIndex = -1;
+    r1ExitPrice = -1;
+
+    // Reset RB
+    rbActive = true;
+    rbState = 1;
+    rbTarget = 110;
+    rbStop = 90;
+    rbHitMarkers = new Array();
+    rbGhostBrackets = new Array();
+    rbExitIndex = -1;
+    rbExitPrice = -1;
+
+    let setupCandle = { o: entryPrice - 4, h: entryPrice + 2, l: entryPrice - 6, c: entryPrice };
+    candles.push(setupCandle);
+
+    currentCandle = {o: entryPrice, h: entryPrice, l: entryPrice, c: entryPrice};
+    candles.push(currentCandle);
+  }
+
+  function getY(price) {
+    // Maps 80 to 175 within the drawable area to accommodate the huge run
+    return map(price, 80, 175, height - 50, 60);
+  }
+
+  function draw() {
+    background(252, 253, 255);
+
+    // Divider and Headers
+    stroke(200); strokeWeight(2); drawingContext.setLineDash(new Array(5, 5));
+    line(width/2, 0, width/2, height);
+    drawingContext.setLineDash(new Array());
+
+    noStroke(); fill(0); textAlign(CENTER); textSize(18); textStyle(BOLD);
+    text("Traditional R1:R3 OCO Bracket", width/4, 30);
+    text("Trade Unafraid Ratchet Bracket", width * 0.75, 30);
+    textSize(12); textStyle(NORMAL);
+    text("Target: $130 | Stop: $90", width/4, 50);
+    text("Dynamic Scaled Exit + Discrete Trailing Remainder", width * 0.75, 50);
+    textAlign(LEFT);
+
+    let bothInactive = (!r1r3Active && !rbActive);
+
+    if (!bothInactive && currentWaypointIdx < waypoints.length) {
+      frameCounter++;
+
+      let tp = waypoints[currentWaypointIdx];
+      if (basePrice < tp) {
+        basePrice += 0.35; // Slightly faster to cover $65 of vertical ground smoothly
+        if (basePrice >= tp) currentWaypointIdx++;
+      } else {
+        basePrice -= 0.35;
+        if (basePrice <= tp) currentWaypointIdx++;
+      }
+
+      let currentPrice = basePrice + random(-1.0, 1.0);
+      currentCandle.c = currentPrice;
+      if (currentPrice > currentCandle.h) currentCandle.h = currentPrice;
+      if (currentPrice < currentCandle.l) currentCandle.l = currentPrice;
+
+      // --- EVALUATE R1:R3 ---
+      if (r1r3Active) {
+        if (currentPrice >= r1Target) {
+          r1r3Active = false; r1ExitPrice = r1Target; r1ExitIndex = candles.length - 1;
+        } else if (currentPrice <= r1Stop) {
+          r1r3Active = false; r1ExitPrice = r1Stop; r1ExitIndex = candles.length - 1;
+        }
+      }
+
+      // --- EVALUATE RATCHET BRACKET ---
+      if (rbActive) {
+        if (rbState === 1) {
+          if (currentPrice >= rbTarget) {
+            rbHitMarkers.push({x: candles.length - 1, y: rbTarget, label: "TGT 1 HIT"});
+            rbGhostBrackets.push({y: rbTarget, isTarget: true, label: "Target 1 (Hit)"});
+            rbGhostBrackets.push({y: rbStop, isTarget: false, label: "Bracket 1 Stop"});
+            rbState = 2; rbTarget = 120; rbStop = 100;
+          } else if (currentPrice <= rbStop) { rbActive = false; rbExitPrice = rbStop; rbExitIndex = candles.length - 1; }
+        }
+        else if (rbState === 2) {
+          if (currentPrice >= rbTarget) {
+            rbHitMarkers.push({x: candles.length - 1, y: rbTarget, label: "TGT 2 HIT"});
+            rbGhostBrackets.push({y: rbTarget, isTarget: true, label: "Target 2 (Hit)"});
+            rbGhostBrackets.push({y: rbStop, isTarget: false, label: "Bracket 2 Stop"});
+            rbState = 3;
+            rbTarget = 130; // First explicit ghost target increment
+            rbStop = 110;
+          } else if (currentPrice <= rbStop) { rbActive = false; rbExitPrice = rbStop; rbExitIndex = candles.length - 1; }
+        }
+        else if (rbState === 3) {
+          if (currentPrice >= rbTarget) {
+            rbHitMarkers.push({x: candles.length - 1, y: rbTarget, label: "GHOST HIT"});
+            rbGhostBrackets.push({y: rbTarget, isTarget: true, label: "Ghost Target (Hit)"});
+            rbGhostBrackets.push({y: rbStop, isTarget: false, label: "Trail Stop (Old)"});
+            // Ratchet up by the discrete increment
+            rbTarget += rbTrailIncrement;
+            rbStop += rbTrailIncrement;
+          } else if (currentPrice <= rbStop) { rbActive = false; rbExitPrice = rbStop; rbExitIndex = candles.length - 1; }
+        }
+      }
+
+      // Roll over candle
+      if (frameCounter % 30 === 0) {
+        currentCandle = {o: currentPrice, h: currentPrice, l: currentPrice, c: currentPrice};
+        candles.push(currentCandle);
+      }
+    } else if (bothInactive) {
+      exitWaitFrames++;
+      if (exitWaitFrames > 180) resetAnimation();
+    }
+
+    // --- DRAW LEFT SIDE (R1:R3) ---
+    let lOffset = 20;
+
+    let r1tY = getY(r1Target);
+    stroke(38, 166, 154); strokeWeight(2); drawingContext.setLineDash(new Array(5, 5));
+    line(0, r1tY, width/2, r1tY);
+    drawingContext.setLineDash(new Array());
+    noStroke(); fill(38, 166, 154); textStyle(BOLD); text("All-or-Nothing Target ($130)", lOffset, r1tY - 8);
+
+    let r1sY = getY(r1Stop);
+    stroke(239, 83, 80); strokeWeight(2); drawingContext.setLineDash(new Array(5, 5));
+    line(0, r1sY, width/2, r1sY);
+    drawingContext.setLineDash(new Array());
+    noStroke(); fill(239, 83, 80); textStyle(BOLD); text("Hard Stop ($90)", lOffset, r1sY + 16);
+    textStyle(NORMAL);
+
+    for (let i = 0; i < candles.length; i++) {
+      if (!r1r3Active && i > r1ExitIndex) break;
+      let c = candles[i];
+      let cx = lOffset + 30 + i * candleSpacing;
+      let isUp = c.c >= c.o;
+      let cColor = isUp ? color(38, 166, 154) : color(239, 83, 80);
+      stroke(cColor); strokeWeight(1.5);
+      line(cx, getY(c.h), cx, getY(c.l));
+      let bHeight = Math.max(1, Math.abs(getY(c.o) - getY(c.c)));
+      noStroke(); fill(cColor);
+      rect(cx - 4, min(getY(c.o), getY(c.c)), 8, bHeight);
+    }
+
+    // Dynamic Caption Logic for R1:R3 (The FOMO Effect)
+    if (!r1r3Active) {
+      let ex = lOffset + 30 + r1ExitIndex * candleSpacing;
+      let ey = getY(r1ExitPrice);
+      fill(38, 166, 154, 40); circle(ex, ey, 60); fill(38, 166, 154); circle(ex, ey, 12);
+      fill(0); textSize(16); textStyle(BOLD); textAlign(CENTER);
+      text("TARGET HIT!", width/4, ey - 25);
+
+      // Change text based on how much higher the market goes without them
+      if (basePrice > 145) {
+        fill(239, 83, 80); textSize(14);
+        text("Watching the R6 runner fly by... leaving money on the table.", width/4, height - 20);
+      } else {
+        fill(38, 166, 154); textSize(14);
+        text("Profit Locked. Trade Over.", width/4, height - 20);
+      }
+      textAlign(LEFT); textStyle(NORMAL);
+    } else {
+      fill(100); textSize(14); textAlign(CENTER);
+      text("Holding position. Waiting for $130 Target.", width/4, height - 20);
+      textAlign(LEFT);
+    }
+
+    // --- DRAW RIGHT SIDE (RATCHET BRACKET) ---
+    let rOffset = width/2 + 20;
+
+    for (let i = 0; i < rbGhostBrackets.length; i++) {
+      let gb = rbGhostBrackets[i];
+      let gy = getY(gb.y);
+      if (gb.isTarget) {
+        stroke(38, 166, 154, 45); strokeWeight(2); drawingContext.setLineDash(new Array(5, 5)); line(width/2, gy, width, gy);
+        drawingContext.setLineDash(new Array()); noStroke(); fill(38, 166, 154, 100); text(gb.label, rOffset, gy - 8);
+      } else {
+        stroke(239, 83, 80, 45); strokeWeight(2); drawingContext.setLineDash(new Array(5, 5)); line(width/2, gy, width, gy);
+        drawingContext.setLineDash(new Array()); noStroke(); fill(239, 83, 80, 100); text(gb.label, rOffset, gy + 16);
+      }
+    }
+
+    if (rbTarget > 0) {
+      let tgtY = getY(rbTarget);
+      if (rbState === 3) {
+        stroke(38, 166, 154, 150); strokeWeight(2); drawingContext.setLineDash(new Array(5, 5)); line(width/2, tgtY, width, tgtY);
+        drawingContext.setLineDash(new Array()); noStroke(); fill(38, 166, 154, 150); textStyle(BOLD); text("Ghost Target (Trail Increment)", rOffset, tgtY - 8); textStyle(NORMAL);
+      } else {
+        stroke(38, 166, 154); strokeWeight(2); drawingContext.setLineDash(new Array(5, 5)); line(width/2, tgtY, width, tgtY);
+        drawingContext.setLineDash(new Array()); noStroke(); fill(38, 166, 154); textStyle(BOLD); text("Active Target", rOffset, tgtY - 8); textStyle(NORMAL);
+      }
+    }
+
+    let rbsY = getY(rbStop);
+    stroke(239, 83, 80); strokeWeight(2); drawingContext.setLineDash(new Array(5, 5)); line(width/2, rbsY, width, rbsY);
+    drawingContext.setLineDash(new Array()); noStroke(); fill(239, 83, 80); textStyle(BOLD);
+    let stopLabel = rbState === 3 ? "Trailing Stop" : "Bracket Stop";
+    text(stopLabel, rOffset, rbsY + 16); textStyle(NORMAL);
+
+    for (let i = 0; i < candles.length; i++) {
+      if (!rbActive && i > rbExitIndex) break;
+      let c = candles[i];
+      let cx = rOffset + 30 + i * candleSpacing;
+      let isUp = c.c >= c.o;
+      let cColor = isUp ? color(38, 166, 154) : color(239, 83, 80);
+      stroke(cColor); strokeWeight(1.5); line(cx, getY(c.h), cx, getY(c.l));
+      let bHeight = Math.max(1, Math.abs(getY(c.o) - getY(c.c)));
+      noStroke(); fill(cColor); rect(cx - 4, min(getY(c.o), getY(c.c)), 8, bHeight);
+    }
+
+    for (let i = 0; i < rbHitMarkers.length; i++) {
+      let hm = rbHitMarkers[i];
+      let hx = rOffset + 30 + hm.x * candleSpacing;
+      let hy = getY(hm.y);
+      fill(38, 166, 154, 40); circle(hx, hy, 30); fill(38, 166, 154); circle(hx, hy, 8);
+      fill(0); textSize(11); textStyle(BOLD); text(hm.label, hx - 25, hy - 20); textStyle(NORMAL);
+    }
+
+    // Dynamic Caption Logic for RB
+    if (!rbActive) {
+      let ex = rOffset + 30 + rbExitIndex * candleSpacing;
+      let ey = getY(rbExitPrice);
+      fill(38, 166, 154, 40); circle(ex, ey, 60); fill(38, 166, 154); circle(ex, ey, 12);
+      fill(0); textSize(16); textStyle(BOLD); textAlign(CENTER);
+      text("STOPPED OUT AT $150!", width * 0.75, ey - 25);
+      fill(38, 166, 154); textSize(14);
+      text("Massive R5/R6 profit secured automatically.", width * 0.75, height - 20);
+      textAlign(LEFT); textStyle(NORMAL);
+    } else if (rbState === 3) {
+      fill(38, 166, 154); textSize(14); textAlign(CENTER); textStyle(BOLD);
+      text("Trailing remainder... ratcheting risk-free profit higher!", width * 0.75, height - 20);
+      textAlign(LEFT); textStyle(NORMAL);
+    } else {
+      fill(100); textSize(14); textAlign(CENTER);
+      text("Scaling out into strength...", width * 0.75, height - 20);
+      textAlign(LEFT);
+    }
+  }
+</script>
+</body>
+</html>

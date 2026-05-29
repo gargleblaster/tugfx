@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Candle Magnitude Animation - Pivots as Trails</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <style>
+    body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #ffffff; font-family: sans-serif;}
+    canvas { border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 4px; }
+  </style>
+</head>
+<body>
+<script>
+  let historicalCandles = new Array();
+  let candles = new Array();
+  let currentCandle;
+  let hitMarkers = new Array();
+  let ghostBrackets = new Array();
+
+  // 1. Establish the Historical Pivots
+  let entryPrice = 100;
+  let initialStop = 85; // From historical low
+  let target1 = 120;    // From minor historical high
+  let target2 = 140;    // From major historical high
+  let firstTargetStop = 100; // E.g., Break Even
+
+  // Running State
+  let pivotState = 1;
+  let activeTarget = target1;
+  let activeStop = initialStop;
+
+  let tradeActive = true;
+  let exitWaitFrames = 0;
+  let frameCounter = 0;
+
+  // REDUCED SPACING: Shrunk from 35 to 24 so the entire timeline fits
+  let candleSpacing = 24;
+
+  // Expanded Scripted Price Path
+  let waypoints = new Array(105, 95, 125, 108, 145, 130, 155, 115);
+  let currentWaypointIdx = 0;
+  let basePrice = 100;
+
+  function setup() {
+    createCanvas(800, 500);
+    resetAnimation();
+  }
+
+  function resetAnimation() {
+    candles = new Array();
+    hitMarkers = new Array();
+    ghostBrackets = new Array();
+    basePrice = entryPrice;
+    currentWaypointIdx = 0;
+
+    pivotState = 1;
+    activeTarget = target1;
+    activeStop = initialStop;
+
+    // HARDCODE HISTORICAL CANDLES TO SHOW WHERE PIVOTS COME FROM
+    historicalCandles = new Array(
+            {o: 130, h: 140, l: 125, c: 135}, // Establishes Target 2 (140)
+            {o: 135, h: 138, l: 110, c: 115},
+            {o: 115, h: 120, l: 105, c: 118}, // Establishes Target 1 (120)
+            {o: 118, h: 122, l: 95,  c: 98},
+            {o: 98,  h: 102, l: 85,  c: 92},  // Establishes Initial Stop (85)
+            {o: 92,  h: 100, l: 90,  c: 100}  // Setup Candle / Entry
+    );
+
+    // Initialize the first live trade candle
+    currentCandle = {o: entryPrice, h: entryPrice, l: entryPrice, c: entryPrice};
+    candles.push(currentCandle);
+
+    tradeActive = true;
+    exitWaitFrames = 0;
+    frameCounter = 0;
+  }
+
+  function getY(price) {
+    return map(price, 75, 165, height - 30, 30);
+  }
+
+  function draw() {
+    background(252, 253, 255);
+
+    if (tradeActive) {
+      frameCounter++;
+
+      // Progress along waypoints
+      if (currentWaypointIdx < waypoints.length) {
+        let tp = waypoints[currentWaypointIdx];
+        if (basePrice < tp) {
+          basePrice += 0.20;
+          if (basePrice >= tp) currentWaypointIdx++;
+        } else {
+          basePrice -= 0.20;
+          if (basePrice <= tp) currentWaypointIdx++;
+        }
+      }
+
+      let currentPrice = basePrice + random(-1.0, 1.0);
+
+      currentCandle.c = currentPrice;
+      if (currentPrice > currentCandle.h) currentCandle.h = currentPrice;
+      if (currentPrice < currentCandle.l) currentCandle.l = currentPrice;
+
+      // PIVOTS AS TRAILS STATE MACHINE
+      if (pivotState === 1) {
+        if (currentPrice >= activeTarget) {
+          let liveIdx = historicalCandles.length + candles.length - 1;
+          hitMarkers.push({x: liveIdx, y: activeTarget, label: "TGT 1 HIT"});
+
+          ghostBrackets.push({y: activeTarget, isTarget: true, label: "Target 1 (Hit)"});
+          ghostBrackets.push({y: activeStop, isTarget: false, label: "Initial Stop (Old)"});
+
+          pivotState = 2;
+          activeTarget = target2;       // 140
+          activeStop = firstTargetStop; // 100
+        } else if (currentPrice <= activeStop) { tradeActive = false; }
+      }
+      else if (pivotState === 2) {
+        if (currentPrice >= activeTarget) {
+          let liveIdx = historicalCandles.length + candles.length - 1;
+          hitMarkers.push({x: liveIdx, y: activeTarget, label: "TGT 2 HIT"});
+
+          ghostBrackets.push({y: activeTarget, isTarget: true, label: "Target 2 (Hit)"});
+          ghostBrackets.push({y: activeStop, isTarget: false, label: "1st Tgt Stop (Old)"});
+
+          pivotState = 3;
+          activeTarget = -1; // End of discrete targets
+          // THE CORE MECHANIC: Target 1 (120) becomes the next pivot stop!
+          activeStop = target1;
+        } else if (currentPrice <= activeStop) { tradeActive = false; }
+      }
+      else if (pivotState === 3) {
+        if (currentPrice <= activeStop) { tradeActive = false; }
+      }
+
+      // Roll over to a new candle every 50 frames
+      if (frameCounter % 50 === 0 && tradeActive) {
+        currentCandle = {o: currentPrice, h: currentPrice, l: currentPrice, c: currentPrice};
+        candles.push(currentCandle);
+      }
+    } else {
+      exitWaitFrames++;
+      if (exitWaitFrames > 120) resetAnimation();
+    }
+
+    // --- RENDER VISUALS ---
+
+    for (let i = 0; i < ghostBrackets.length; i++) {
+      let gb = ghostBrackets[i];
+      let gy = getY(gb.y);
+
+      if (gb.isTarget) {
+        stroke(38, 166, 154, 45);
+        strokeWeight(2); drawingContext.setLineDash(new Array(5, 5));
+        line(0, gy, width, gy);
+        drawingContext.setLineDash(new Array());
+        noStroke(); fill(38, 166, 154, 100); textStyle(NORMAL);
+        text(gb.label, 10, gy - 8);
+      } else {
+        stroke(239, 83, 80, 45);
+        strokeWeight(2); drawingContext.setLineDash(new Array(5, 5));
+        line(0, gy, width, gy);
+        drawingContext.setLineDash(new Array());
+        noStroke(); fill(239, 83, 80, 100); textStyle(NORMAL);
+        text(gb.label, 10, gy + 16);
+      }
+    }
+
+    if (pivotState === 1) {
+      let p2y = getY(target2);
+      stroke(38, 166, 154, 80); strokeWeight(1); drawingContext.setLineDash(new Array(2, 4));
+      line(0, p2y, width, p2y);
+      drawingContext.setLineDash(new Array());
+      noStroke(); fill(38, 166, 154, 120); textSize(11);
+      text("Historical Pivot (Projected Target 2)", 10, p2y - 6);
+    }
+
+    if (activeTarget > 0) {
+      let tgtY = getY(activeTarget);
+      stroke(38, 166, 154); strokeWeight(2); drawingContext.setLineDash(new Array(5, 5));
+      line(0, tgtY, width, tgtY);
+      drawingContext.setLineDash(new Array());
+      noStroke(); fill(38, 166, 154); textSize(12); textStyle(BOLD);
+      text("Active Target", 10, tgtY - 8);
+      textStyle(NORMAL);
+    }
+
+    let stopY = getY(activeStop);
+    stroke(239, 83, 80); strokeWeight(2); drawingContext.setLineDash(new Array(5, 5));
+    line(0, stopY, width, stopY);
+    drawingContext.setLineDash(new Array());
+    noStroke(); fill(239, 83, 80); textSize(12); textStyle(BOLD);
+
+    let stopLabel = "Initial Stop";
+    if (pivotState === 2) stopLabel = "1st Target Stop";
+    if (pivotState === 3) stopLabel = "Target 1 becomes Pivot Stop!";
+
+    text(stopLabel, 10, stopY + 16);
+    textStyle(NORMAL);
+
+    // Historical background box adjusted for new spacing
+    fill(0, 0, 0, 8); noStroke();
+    rect(0, 0, 60 + historicalCandles.length * candleSpacing - 12, height);
+    fill(0, 0, 0, 80); textSize(11); textStyle(ITALIC);
+    text("Historical Pivot Detection", 10, 20);
+    textStyle(NORMAL);
+
+    for (let i = 0; i < historicalCandles.length; i++) {
+      let c = historicalCandles[i];
+      let cx = 60 + i * candleSpacing;
+      let isUp = c.c >= c.o;
+      let candleColor = isUp ? color(38, 166, 154, 150) : color(239, 83, 80, 150);
+
+      stroke(candleColor); strokeWeight(1.5);
+      line(cx, getY(c.h), cx, getY(c.l));
+
+      let yO = getY(c.o);
+      let yC = getY(c.c);
+      let bodyHeight = Math.abs(yO - yC);
+      if (bodyHeight < 1) bodyHeight = 1;
+
+      noStroke(); fill(candleColor);
+      rect(cx - 4, min(yO, yC), 8, bodyHeight);
+    }
+
+    let liveOffset = historicalCandles.length;
+    for (let i = 0; i < candles.length; i++) {
+      let c = candles[i];
+      let cx = 60 + (liveOffset + i) * candleSpacing;
+      let isUp = c.c >= c.o;
+      let candleColor = isUp ? color(38, 166, 154) : color(239, 83, 80);
+
+      stroke(candleColor); strokeWeight(1.5);
+      line(cx, getY(c.h), cx, getY(c.l));
+
+      let yO = getY(c.o);
+      let yC = getY(c.c);
+      let bodyHeight = Math.abs(yO - yC);
+      if (bodyHeight < 1) bodyHeight = 1;
+
+      noStroke(); fill(candleColor);
+      rect(cx - 4, min(yO, yC), 8, bodyHeight);
+    }
+
+    for (let i = 0; i < hitMarkers.length; i++) {
+      let hm = hitMarkers[i];
+      let hx = 60 + hm.x * candleSpacing;
+      let hy = getY(hm.y);
+      fill(38, 166, 154, 40); circle(hx, hy, 30);
+      fill(38, 166, 154); circle(hx, hy, 8);
+      fill(0); textSize(12); textStyle(BOLD);
+      text(hm.label, hx - 20, hy - 20);
+      textStyle(NORMAL);
+    }
+
+    if (!tradeActive) {
+      let ex = 60 + (historicalCandles.length + candles.length - 1) * candleSpacing;
+      let ey = getY(activeStop);
+      fill(239, 83, 80, 40); circle(ex, ey, 50);
+      fill(239, 83, 80); circle(ex, ey, 12);
+      fill(0); textSize(16); textStyle(BOLD);
+      text("FLATTEN!", ex - 35, ey - 32);
+      textStyle(NORMAL);
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Soft Orders - Universal Convergence</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #ffffff; font-family: sans-serif;}
+        canvas { border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 4px; }
+    </style>
+</head>
+<body>
+<script>
+    let candles = new Array();
+    let currentCandle;
+    let hitMarkers = new Array();
+
+    // Shared Environment
+    let entryPrice = 100;
+    let tradeActive = true;
+    let exitWaitFrames = 0;
+    let frameCounter = 0;
+
+    // Adjusted spacing and start point so candles naturally fill the screen
+    // and slide underneath the floating legend box.
+    let candleSpacing = 24;
+    let candleStartX = 60;
+    let exitReason = "";
+
+    // --- TACTIC 1: 5-CANDLE TRAIL (Dotted, Bright Red) ---
+    let ctStop = -1;
+    let lookbackPeriod = 5;
+
+    // --- TACTIC 2: RATCHET BRACKET (Dashed, Standard Red) ---
+    let rbState = 1;
+    let rbTarget = 115;
+    let rbStop = 90;
+    let rbTrailIncrement = 10;
+    let rbStopDistance = 15;
+    let rbGhostBrackets = new Array();
+
+    // --- TACTIC 3: MFE RETRACEMENT (Dot-Dash, Standard Red) ---
+    let maxMfe = 100;
+    let activationDistance = 17;
+    let retracePct = 0.50;
+    let mfeRetraceLevel = -1;
+    let mfeActivated = false;
+
+    // Styling Colors
+    let colorCT, colorRB, colorMFE;
+
+    // LONG MEANDERING PATH
+    let waypoints = new Array(106, 101, 112, 104, 119, 111, 127, 118, 137, 129, 147, 139, 156, 149, 162, 120);
+    let currentWaypointIdx = 0;
+    let basePrice = 100;
+
+    function setup() {
+        createCanvas(1000, 550);
+
+        colorCT = color(255, 0, 0);       // Bright Red
+        colorRB = color(239, 83, 80);     // Standard Red
+        colorMFE = color(239, 83, 80);    // Matched to standard red to equalize visual weight
+
+        resetAnimation();
+    }
+
+    function resetAnimation() {
+        candles = new Array();
+        hitMarkers = new Array();
+        rbGhostBrackets = new Array();
+        basePrice = entryPrice;
+        currentWaypointIdx = 0;
+        frameCounter = 0;
+        exitWaitFrames = 0;
+        tradeActive = true;
+        exitReason = "";
+        mfeActivated = false;
+
+        // Reset States
+        rbState = 1; rbTarget = 115; rbStop = 90;
+        maxMfe = entryPrice; mfeRetraceLevel = -1;
+
+        // Setup candle gives the 5-candle trail a starting floor
+        let setupCandle = { o: entryPrice - 4, h: entryPrice + 2, l: entryPrice - 6, c: entryPrice };
+        candles.push(setupCandle);
+        ctStop = setupCandle.l;
+
+        currentCandle = {o: entryPrice, h: entryPrice, l: entryPrice, c: entryPrice};
+        candles.push(currentCandle);
+    }
+
+    function getY(price) {
+        return map(price, 85, 165, height - 30, 30);
+    }
+
+    function draw() {
+        background(252, 253, 255);
+
+        if (tradeActive) {
+            frameCounter++;
+
+            // Slower, meandering progression
+            if (currentWaypointIdx < waypoints.length) {
+                let tp = waypoints[currentWaypointIdx];
+                if (basePrice < tp) {
+                    basePrice += 0.15;
+                    if (basePrice >= tp) currentWaypointIdx++;
+                } else {
+                    basePrice -= 0.15;
+                    if (basePrice <= tp) currentWaypointIdx++;
+                }
+            }
+
+            let currentPrice = basePrice + random(-1.0, 1.0);
+            currentCandle.c = currentPrice;
+            if (currentPrice > currentCandle.h) currentCandle.h = currentPrice;
+            if (currentPrice < currentCandle.l) currentCandle.l = currentPrice;
+
+            // --- 1. UPDATE MFE RETRACEMENT STATE ---
+            if (currentCandle.h > maxMfe) {
+                maxMfe = currentCandle.h;
+            }
+            if (!mfeActivated && maxMfe - entryPrice >= activationDistance) {
+                mfeActivated = true;
+            }
+            if (mfeActivated) {
+                mfeRetraceLevel = entryPrice + (maxMfe - entryPrice) * (1 - retracePct);
+            }
+
+            // --- 2. UPDATE RATCHET BRACKET STATE MACHINE ---
+            if (rbState === 1 && currentPrice >= rbTarget) {
+                hitMarkers.push({x: candles.length - 1, y: rbTarget, label: "TGT 1 HIT"});
+                rbGhostBrackets.push({y: rbTarget, isTarget: true, label: "Target 1 (Hit)"});
+                rbGhostBrackets.push({y: rbStop, isTarget: false, label: "Stop 1 (Old)"});
+
+                rbState = 2;
+                rbTarget = 130;
+                rbStop = 105;
+            } else if (rbState === 2 && currentPrice >= rbTarget) {
+                hitMarkers.push({x: candles.length - 1, y: rbTarget, label: "TGT 2 HIT"});
+                rbGhostBrackets.push({y: rbTarget, isTarget: true, label: "Target 2 (Hit)"});
+                rbGhostBrackets.push({y: rbStop, isTarget: false, label: "Stop 2 (Old)"});
+
+                rbState = 3;
+                rbTarget = 140;
+                rbStop = rbTarget - rbStopDistance;
+            } else if (rbState === 3 && currentPrice >= rbTarget) {
+                hitMarkers.push({x: candles.length - 1, y: rbTarget, label: "GHOST HIT"});
+                rbGhostBrackets.push({y: rbTarget, isTarget: true, label: "Ghost Target (Hit)"});
+                rbGhostBrackets.push({y: rbStop, isTarget: false, label: "Trail Stop (Old)"});
+
+                rbTarget += rbTrailIncrement;
+                rbStop += rbTrailIncrement;
+            }
+
+            // --- 3. EVALUATE ALL SOFT ORDERS SIMULTANEOUSLY ---
+            if (currentPrice <= ctStop) {
+                tradeActive = false; exitReason = "5-Candle Trail Triggered First!";
+            } else if (currentPrice <= rbStop) {
+                tradeActive = false; exitReason = "Ratchet Bracket Triggered First!";
+            } else if (mfeRetraceLevel > 0 && currentPrice <= mfeRetraceLevel) {
+                tradeActive = false; exitReason = "MFE Retracement Triggered First!";
+            }
+
+            // Roll over candle every 40 frames
+            if (frameCounter % 40 === 0 && tradeActive) {
+
+                let checkLength = Math.min(lookbackPeriod, candles.length);
+                let lowestLow = 9999;
+                for (let i = candles.length - checkLength; i < candles.length; i++) {
+                    if (candles[i].l < lowestLow) lowestLow = candles[i].l;
+                }
+
+                if (lowestLow > ctStop) ctStop = lowestLow;
+
+                currentCandle = {o: currentPrice, h: currentPrice, l: currentPrice, c: currentPrice};
+                candles.push(currentCandle);
+            }
+        } else {
+            exitWaitFrames++;
+            if (exitWaitFrames > 220) resetAnimation();
+        }
+
+        // --- RENDER LINES & INLINE LABELS ---
+
+        // MFE Activation Line
+        if (!mfeActivated) {
+            let actY = getY(entryPrice + activationDistance);
+            stroke(100, 100, 100, 150);
+            strokeWeight(2); drawingContext.setLineDash(new Array(5, 5)); line(0, actY, width, actY);
+            drawingContext.setLineDash(new Array());
+            noStroke(); fill(100, 100, 100, 200);
+            textSize(12); textStyle(ITALIC); text("MFE Activation Threshold", 15, actY - 6); textStyle(NORMAL);
+        }
+
+        // Draw RB Ghost Brackets
+        for (let i = 0; i < rbGhostBrackets.length; i++) {
+            let gb = rbGhostBrackets[i];
+            let gy = getY(gb.y);
+
+            if (gb.isTarget) {
+                stroke(38, 166, 154, 45); strokeWeight(2); drawingContext.setLineDash(new Array(5, 5)); line(0, gy, width, gy);
+                drawingContext.setLineDash(new Array()); noStroke(); fill(38, 166, 154, 100); text(gb.label, 15, gy - 6);
+            } else {
+                stroke(colorRB.levels, colorRB.levels, colorRB.levels, 45);
+                strokeWeight(2); drawingContext.setLineDash(new Array(5, 5)); line(0, gy, width, gy);
+                drawingContext.setLineDash(new Array()); noStroke(); fill(colorRB.levels, colorRB.levels, colorRB.levels, 100); text(gb.label, 15, gy + 14);
+            }
+        }
+
+        // MFE Tracker Line
+        if (maxMfe > entryPrice) {
+            let mY = getY(maxMfe);
+            stroke(38, 166, 154, 100); strokeWeight(1); drawingContext.setLineDash(new Array()); line(0, mY, width, mY);
+        }
+
+        // Ratchet Bracket Active/Ghost Target
+        if (rbTarget > 0) {
+            let tgtY = getY(rbTarget);
+            let labelStr = rbState === 3 ? "RB Ghost Target" : "RB Active Target";
+            stroke(38, 166, 154, 200); strokeWeight(1.5); drawingContext.setLineDash(new Array(5, 5)); line(0, tgtY, width, tgtY);
+            drawingContext.setLineDash(new Array()); noStroke(); fill(38, 166, 154); textStyle(BOLD); text(labelStr, 15, tgtY - 6); textStyle(NORMAL);
+        }
+
+        // 1. MFE Retracement Stop
+        if (mfeRetraceLevel > 0) {
+            let mfeY = getY(mfeRetraceLevel);
+            stroke(colorMFE); strokeWeight(2); drawingContext.setLineDash(new Array(10, 4, 2, 4)); line(0, mfeY, width, mfeY);
+            drawingContext.setLineDash(new Array());
+            noStroke(); fill(colorMFE); textStyle(BOLD); text("MFE Retrace Stop", 15, mfeY + 14); textStyle(NORMAL);
+        }
+
+        // 2. Ratchet Bracket Stop
+        let rbsY = getY(rbStop);
+        stroke(colorRB); strokeWeight(2); drawingContext.setLineDash(new Array(6, 6)); line(0, rbsY, width, rbsY);
+        drawingContext.setLineDash(new Array());
+        noStroke(); fill(colorRB); textStyle(BOLD); text("Ratchet Bracket Stop", 15, rbsY + 14); textStyle(NORMAL);
+
+        // 3. 5-Candle Trail Stop
+        if (ctStop > 0) {
+            let ctsY = getY(ctStop);
+            stroke(colorCT); strokeWeight(2); drawingContext.setLineDash(new Array(2, 4)); line(0, ctsY, width, ctsY);
+            drawingContext.setLineDash(new Array());
+            noStroke(); fill(colorCT); textStyle(BOLD); text("5-Candle Trail", 15, ctsY + 14); textStyle(NORMAL);
+        }
+
+        drawingContext.setLineDash(new Array());
+
+        // --- RENDER CANDLES ---
+        for (let i = 0; i < candles.length; i++) {
+            let c = candles[i];
+            let cx = candleStartX + i * candleSpacing;
+            let isUp = c.c >= c.o;
+            let cColor = isUp ? color(38, 166, 154) : color(239, 83, 80);
+
+            stroke(cColor); strokeWeight(1.5); line(cx, getY(c.h), cx, getY(c.l));
+            let bHeight = Math.max(1, Math.abs(getY(c.o) - getY(c.c)));
+            noStroke(); fill(cColor); rect(cx - 4, min(getY(c.o), getY(c.c)), 8, bHeight);
+        }
+
+        // --- RENDER HIT MARKERS ---
+        for (let i = 0; i < hitMarkers.length; i++) {
+            let hm = hitMarkers[i];
+            let hx = candleStartX + hm.x * candleSpacing;
+            let hy = getY(hm.y);
+            fill(38, 166, 154, 40); circle(hx, hy, 30); fill(38, 166, 154); circle(hx, hy, 8);
+            fill(0); textSize(11); textStyle(BOLD); text(hm.label, hx - 30, hy - 20); textStyle(NORMAL);
+        }
+
+        // --- DETERMINE NEAREST STOP ---
+        let activeStops = new Array();
+        if (ctStop > 0) activeStops.push({ label: "5-Candle Trail Stop", value: ctStop, color: colorCT, yPos: 64 });
+        if (rbStop > 0) activeStops.push({ label: "Ratchet Bracket Stop", value: rbStop, color: colorRB, yPos: 89 });
+        if (mfeRetraceLevel > 0) activeStops.push({ label: "MFE Retracement Trigger", value: mfeRetraceLevel, color: colorMFE, yPos: 114 });
+
+        let nearestStop = null;
+        let highestVal = -9999;
+        for (let i = 0; i < activeStops.length; i++) {
+            if (activeStops[i].value > highestVal) {
+                highestVal = activeStops[i].value;
+                nearestStop = activeStops[i];
+            }
+        }
+
+        // --- RENDER CONSOLIDATED LEGEND (Floating over candles) ---
+        fill(255, 255, 255, 245); stroke(200); strokeWeight(1);
+        rect(15, 15, 300, 135, 6); // Expanded box to fit Nearest Stop HUD
+        noStroke(); fill(0); textSize(14); textStyle(BOLD);
+        text("Soft Orders: Active Exits", 25, 40);
+        textStyle(NORMAL); textSize(12);
+
+        // Legend: Candle Trail
+        stroke(colorCT); strokeWeight(2); drawingContext.setLineDash(new Array(2, 4)); line(25, 60, 60, 60);
+        noStroke(); fill(0); text("5-Candle Trail Stop", 70, 64);
+
+        // Legend: Ratchet Bracket
+        stroke(colorRB); strokeWeight(2); drawingContext.setLineDash(new Array(6, 6)); line(25, 85, 60, 85);
+        noStroke(); fill(0); text("Ratchet Bracket Stop", 70, 89);
+
+        // Legend: MFE Retracement
+        stroke(colorMFE); strokeWeight(2); drawingContext.setLineDash(new Array(10, 4, 2, 4)); line(25, 110, 60, 110);
+        noStroke(); fill(0); text("MFE Retracement Trigger", 70, 114);
+        drawingContext.setLineDash(new Array());
+
+        // Draw dynamic Arrow and Footer text
+        if (tradeActive && nearestStop != null) {
+            // Arrow pointing to the active row
+            fill(nearestStop.color); textStyle(BOLD);
+            text("◄ Nearest", 235, nearestStop.yPos);
+
+            // HUD Footer
+            fill(0); textStyle(BOLD);
+            text("Nearest Stop: ", 25, 135);
+            fill(nearestStop.color);
+            text(nearestStop.label, 115, 135);
+        } else if (!tradeActive) {
+            fill(239, 83, 80); textStyle(BOLD);
+            text("Nearest Stop: TRADE FLATTENED", 25, 135);
+        }
+        textStyle(NORMAL);
+
+        // --- FINAL FLATTEN MARKER ---
+        if (!tradeActive) {
+            let ex = candleStartX + (candles.length - 1) * candleSpacing;
+            // Map the Y coordinate to whichever stop was breached
+            let ey = getY(currentCandle.c);
+
+            fill(239, 83, 80, 40); noStroke(); circle(ex, ey, 60);
+            fill(239, 83, 80); circle(ex, ey, 12);
+
+            fill(0); textSize(16); textStyle(BOLD); textAlign(CENTER);
+            text("FLATTEN!", ex, ey - 35);
+            fill(239, 83, 80); textSize(13);
+            text(exitReason, ex, ey - 18);
+            textAlign(LEFT); textStyle(NORMAL);
+        }
+    }
+</script>
+</body>
+</html>
